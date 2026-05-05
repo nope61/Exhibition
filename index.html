@@ -100,34 +100,34 @@
             align-items: center;
             min-height: 100vh;
             background: linear-gradient(135deg, #4a3018, #1f140c); /* 敦煌壁畫底色 */
-            padding: 30px 20px;
+            padding: 20px;
             box-sizing: border-box;
         }
         .remote-container {
             background-color: rgba(0, 0, 0, 0.4);
             border: 1px solid #8b5a2b;
-            padding: 40px 20px;
+            padding: 30px 20px;
             border-radius: 12px;
             width: 100%;
             max-width: 400px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            margin-top: 50px;
+            margin-top: 20px;
         }
         .theme-title { color: #d4a373; margin-bottom: 10px; font-size: 26px; letter-spacing: 3px; font-weight: normal; }
-        .theme-subtitle { color: #bcaaa4; margin-bottom: 40px; font-size: 15px; letter-spacing: 1px; }
+        .theme-subtitle { color: #bcaaa4; margin-bottom: 30px; font-size: 15px; letter-spacing: 1px; }
         
         .play-btn {
             background-color: #b04a3e; /* 硃砂紅 */
             color: #f5ebd9;
             border: 1px solid #d4a373;
-            padding: 20px;
-            font-size: 20px;
+            padding: 18px;
+            font-size: 18px;
             border-radius: 8px;
             width: 100%;
             cursor: pointer;
             letter-spacing: 2px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .play-btn:active { transform: scale(0.97); background-color: #8c382e; }
         
@@ -140,14 +140,15 @@
             border-radius: 8px;
             width: 100%;
             cursor: pointer;
-            margin-bottom: 20px;
+            margin-top: 10px;
+            margin-bottom: 10px;
             letter-spacing: 2px;
         }
         .stop-btn:active { background-color: rgba(92, 58, 33, 0.3); }
 
         #remote-status {
-            margin-top: 25px;
-            font-size: 15px;
+            margin-top: 20px;
+            font-size: 14px;
             color: #e6c280; /* 泥金色 */
             background: rgba(0,0,0,0.3);
             padding: 12px;
@@ -176,11 +177,13 @@
         <div id="player-dashboard" class="status-box hidden">
             <div id="player-status">等待連線中...</div>
             <div id="player-log">系統已準備就緒</div>
-            <div id="playing-ui" class="playing-indicator hidden">🎶 正在播放：歌曲 1...</div>
+            <div id="playing-ui" class="playing-indicator hidden">🎶 正在播放樂曲...</div>
         </div>
 
-        <!-- 隱藏的音樂播放器 -->
+        <!-- 隱藏的音樂播放器 (3首歌) -->
         <audio id="audio-song1" src="song1.mp3"></audio>
+        <audio id="audio-song2" src="song2.mp3"></audio>
+        <audio id="audio-song3" src="song3.mp3"></audio>
     </div>
 
     <!-- ==================== 3. 手機遙控器畫面 ==================== -->
@@ -189,7 +192,10 @@
             <h1 class="theme-title">✨ 敦煌藝術展覽 ✨</h1>
             <p class="theme-subtitle">點擊下方按鈕，聆聽展覽樂曲</p>
 
-            <button class="play-btn" onclick="sendRemoteCommand('play')">▶️ 播放：歌曲 1</button>
+            <button class="play-btn" onclick="sendRemoteCommand('play1')">▶️ 播放：歌曲 1</button>
+            <button class="play-btn" onclick="sendRemoteCommand('play2')">▶️ 播放：歌曲 2</button>
+            <button class="play-btn" onclick="sendRemoteCommand('play3')">▶️ 播放：歌曲 3</button>
+            
             <button class="stop-btn" onclick="sendRemoteCommand('stop')">⏹️ 暫停播放</button>
 
             <div id="remote-status">正在連接展覽網絡...</div>
@@ -198,12 +204,10 @@
 
     <!-- ==================== 核心 JavaScript 邏輯 ==================== -->
     <script>
-        // 設定專屬通訊頻道 (加咗隨機數字防撞頻道)
         const MQTT_TOPIC = "hk_exhibition/audio_control/dunhuang_8899";
         const MQTT_BROKER = "wss://broker.emqx.io:8084/mqtt";
         let mqttClient = null;
 
-        // 偵測網址參數 (NFC 拍卡時自動進入 Remote 模式)
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
@@ -214,7 +218,6 @@
             }
         };
 
-        // 切換介面
         function startMode(mode) {
             document.getElementById('selection-screen').classList.add('hidden');
             if (mode === 'player') {
@@ -225,56 +228,73 @@
             }
         }
 
-        /* -----------------------------------------------------------
-           平板播放器邏輯 (Player)
-        ----------------------------------------------------------- */
+        /* --- 平板播放器邏輯 (Player) --- */
         function initAudioPlayer() {
-            const audio = document.getElementById('audio-song1');
+            // 獲取三首歌的元素
+            const audio1 = document.getElementById('audio-song1');
+            const audio2 = document.getElementById('audio-song2');
+            const audio3 = document.getElementById('audio-song3');
+            const allAudios = [audio1, audio2, audio3];
             
-            // 關鍵：播放 0.1 秒後立刻暫停，解鎖瀏覽器的「自動播放限制」
-            audio.play().then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-            }).catch(e => console.error("解鎖音效失敗:", e));
+            // 解鎖所有歌曲嘅自動播放限制
+            allAudios.forEach(audio => {
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }).catch(e => console.error("解鎖音效失敗:", e));
+            });
 
-            // 更新 UI
             document.getElementById('player-start-btn').classList.add('hidden');
             document.getElementById('player-dashboard').classList.remove('hidden');
             document.getElementById('player-status').innerText = "系統已解鎖，連接雲端中...";
 
-            // 連接 MQTT 雲端
             mqttClient = mqtt.connect(MQTT_BROKER);
 
             mqttClient.on('connect', function () {
                 document.getElementById('player-status').innerText = "已連線！等待觀眾手機指令";
-                mqttClient.subscribe(MQTT_TOPIC); // 訂閱頻道
+                mqttClient.subscribe(MQTT_TOPIC);
             });
 
-            // 監聽手機發來的指令
             mqttClient.on('message', function (topic, message) {
                 const cmd = message.toString();
                 document.getElementById('player-log').innerText = "收到最新指令: " + cmd + " (" + new Date().toLocaleTimeString() + ")";
                 
-                if (cmd === "play") {
-                    audio.currentTime = 0; // 重頭開始播
-                    audio.play();
-                    document.getElementById('playing-ui').classList.remove('hidden');
-                } else if (cmd === "stop") {
+                // 收到任何指令，首先將所有歌停晒，避免重疊
+                allAudios.forEach(audio => {
                     audio.pause();
-                    document.getElementById('playing-ui').classList.add('hidden');
+                    audio.currentTime = 0;
+                });
+
+                const playingUi = document.getElementById('playing-ui');
+
+                // 根據指令播放對應嘅歌
+                if (cmd === "play1") {
+                    audio1.play();
+                    playingUi.innerText = "🎶 正在播放：歌曲 1...";
+                    playingUi.classList.remove('hidden');
+                } else if (cmd === "play2") {
+                    audio2.play();
+                    playingUi.innerText = "🎶 正在播放：歌曲 2...";
+                    playingUi.classList.remove('hidden');
+                } else if (cmd === "play3") {
+                    audio3.play();
+                    playingUi.innerText = "🎶 正在播放：歌曲 3...";
+                    playingUi.classList.remove('hidden');
+                } else if (cmd === "stop") {
+                    playingUi.classList.add('hidden');
                 }
             });
 
-            // 監聽歌曲播完事件
-            audio.onended = function() {
-                document.getElementById('playing-ui').classList.add('hidden');
-                document.getElementById('player-log').innerText = "歌曲播放完畢，等待下一次指令";
-            };
+            // 監聽所有歌曲播完事件
+            allAudios.forEach(audio => {
+                audio.onended = function() {
+                    document.getElementById('playing-ui').classList.add('hidden');
+                    document.getElementById('player-log').innerText = "歌曲播放完畢，等待下一次指令";
+                };
+            });
         }
 
-        /* -----------------------------------------------------------
-           手機遙控器邏輯 (Remote)
-        ----------------------------------------------------------- */
+        /* --- 手機遙控器邏輯 (Remote) --- */
         function initRemoteController() {
             mqttClient = mqtt.connect(MQTT_BROKER);
 
@@ -291,13 +311,12 @@
             if (mqttClient && mqttClient.connected) {
                 mqttClient.publish(MQTT_TOPIC, cmd);
                 
-                if(cmd === 'play') {
+                if(cmd.startsWith('play')) {
                     document.getElementById('remote-status').innerText = "指令已發送！請聆聽現場音樂";
                 } else {
                     document.getElementById('remote-status').innerText = "音樂已暫停";
                 }
                 
-                // 3秒後恢復提示字眼
                 setTimeout(() => {
                     document.getElementById('remote-status').innerText = "系統已準備就緒，請點歌！";
                 }, 3000);
