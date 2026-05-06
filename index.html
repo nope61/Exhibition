@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>展覽互動音響系統</title>
-    <!-- 引入 MQTT 連線庫 (用於手機與平板之間的極速通訊) -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         /* 全局設定 */
@@ -17,8 +16,6 @@
             text-align: center;
             overflow-x: hidden;
         }
-
-        /* 隱藏區塊用 */
         .hidden { display: none !important; }
 
         /* --- 1. 首頁選擇畫面 --- */
@@ -28,10 +25,10 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #2b1a10, #140d08); /* 敦煌深木色/洞穴感 */
+            background: linear-gradient(135deg, #2b1a10, #140d08);
         }
         .mode-btn {
-            background-color: #8b5a2b; /* 赭石色 */
+            background-color: #8b5a2b;
             color: #f5ebd9;
             border: 1px solid #d4a373;
             padding: 20px 40px;
@@ -42,12 +39,10 @@
             width: 80%;
             max-width: 400px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            transition: 0.3s;
             letter-spacing: 2px;
         }
-        .mode-btn:hover { background-color: #a06b35; transform: scale(1.02); }
 
-        /* --- 2. 平板播放器畫面 (黑色專業風格) --- */
+        /* --- 2. 平板播放器畫面 --- */
         #player-screen {
             display: flex;
             flex-direction: column;
@@ -57,7 +52,7 @@
             background-color: #0b0705;
         }
         #player-start-btn {
-            background-color: #b04a3e; /* 硃砂紅 */
+            background-color: #b04a3e;
             color: #f5ebd9;
             border: 2px solid #d4a373;
             padding: 30px 60px;
@@ -65,14 +60,6 @@
             border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 0 20px rgba(176, 74, 62, 0.4);
-            animation: pulse 2s infinite;
-            letter-spacing: 2px;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 15px rgba(176, 74, 62, 0.4); }
-            50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(212, 163, 115, 0.6); }
-            100% { transform: scale(1); box-shadow: 0 0 15px rgba(176, 74, 62, 0.4); }
         }
         .status-box {
             margin-top: 30px;
@@ -83,23 +70,16 @@
             max-width: 600px;
             background-color: rgba(92, 58, 33, 0.1);
         }
-        #player-status { font-size: 24px; color: #d4a373; margin-bottom: 10px; letter-spacing: 1px; }
-        #player-log { font-size: 16px; color: #9a8b7a; }
-        .playing-indicator {
-            color: #e6c280;
-            font-size: 30px;
-            font-weight: bold;
-            margin-top: 20px;
-            letter-spacing: 2px;
-        }
+        #player-status { font-size: 24px; color: #d4a373; margin-bottom: 10px; }
+        .playing-indicator { color: #e6c280; font-size: 30px; font-weight: bold; margin-top: 20px; }
 
-        /* --- 3. 手機遙控器畫面 (敦煌主題) --- */
+        /* --- 3. 手機遙控器畫面 (遙控 + 簡介) --- */
         #remote-screen {
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #4a3018, #1f140c); /* 敦煌壁畫底色 */
+            background: linear-gradient(135deg, #4a3018, #1f140c);
             padding: 20px;
             box-sizing: border-box;
         }
@@ -111,26 +91,23 @@
             width: 100%;
             max-width: 400px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .theme-title { color: #d4a373; margin-bottom: 10px; font-size: 26px; letter-spacing: 3px; font-weight: normal; }
-        .theme-subtitle { color: #bcaaa4; margin-bottom: 30px; font-size: 15px; letter-spacing: 1px; }
+        .theme-subtitle { color: #bcaaa4; margin-bottom: 20px; font-size: 15px; }
         
         .play-btn {
-            background-color: #b04a3e; /* 硃砂紅 */
+            background-color: #b04a3e;
             color: #f5ebd9;
             border: 1px solid #d4a373;
-            padding: 18px;
+            padding: 15px;
             font-size: 18px;
             border-radius: 8px;
             width: 100%;
             cursor: pointer;
             letter-spacing: 2px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
-        .play-btn:active { transform: scale(0.97); background-color: #8c382e; }
-        
         .stop-btn {
             background-color: transparent; 
             color: #9a8b7a;
@@ -140,69 +117,126 @@
             border-radius: 8px;
             width: 100%;
             cursor: pointer;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
+            margin-top: 5px;
         }
-        .stop-btn:active { background-color: rgba(92, 58, 33, 0.3); }
+        #remote-status { margin-top: 15px; font-size: 14px; color: #e6c280; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; }
 
-        #remote-status {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #e6c280; /* 泥金色 */
-            background: rgba(0,0,0,0.3);
-            padding: 12px;
-            border-radius: 6px;
-            letter-spacing: 1px;
+        /* --- 展品簡介設計 --- */
+        .intro-section {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+            border-top: 2px dashed #8b5a2b;
+            padding-top: 20px;
+            padding-bottom: 40px;
         }
+        .intro-title {
+            color: #e6c280;
+            text-align: center;
+            font-size: 22px;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+        .content-card {
+            background: rgba(92, 58, 33, 0.2);
+            border-left: 4px solid #b04a3e;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+        }
+        .content-card h3 { color: #d4a373; margin-top: 0; font-size: 18px; letter-spacing: 1px; }
+        .content-card p, .content-card li { color: #f5ebd9; font-size: 14px; line-height: 1.6; text-align: justify; }
+        .content-card ul { padding-left: 20px; margin-bottom: 0; }
+        .doc-img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #d4a373;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .cite { font-size: 10px; color: rgba(255,255,255,0.3); vertical-align: super; }
     </style>
 </head>
 <body>
 
-    <!-- ==================== 1. 選擇模式畫面 ==================== -->
+    <!-- 1. 選擇模式畫面 -->
     <div id="selection-screen">
         <h1 style="color: #d4a373; margin-bottom: 40px; letter-spacing: 2px; font-weight: normal;">展覽系統設定</h1>
-        <button class="mode-btn" onclick="startMode('player')">進入平板播放模式<br><small style="font-size: 14px; opacity: 0.8;">(請在 Lenovo 平板點擊)</small></button>
-        <button class="mode-btn" onclick="startMode('remote')">進入手機遙控模式<br><small style="font-size: 14px; opacity: 0.8;">(觀眾介面預覽)</small></button>
+        <button class="mode-btn" onclick="startMode('player')">進入平板播放模式</button>
+        <button class="mode-btn" onclick="startMode('remote')">進入手機遙控模式</button>
     </div>
 
-    <!-- ==================== 2. 平板播放器畫面 ==================== -->
+    <!-- 2. 平板播放器畫面 -->
     <div id="player-screen" class="hidden">
         <h1 style="color: #d4a373; font-weight: normal; letter-spacing: 3px;">音響控制主機</h1>
-        <p style="color: #8b5a2b; margin-bottom: 40px; letter-spacing: 1px;">請確保平板已連接藍牙喇叭，並點擊下方按鈕啟動</p>
-        
-        <!-- 必須由工作人員按一次解鎖音效 -->
+        <p style="color: #8b5a2b; margin-bottom: 40px;">請確保平板已連接藍牙喇叭，並點擊下方按鈕啟動</p>
         <button id="player-start-btn" onclick="initAudioPlayer()">啟動接收系統</button>
-        
         <div id="player-dashboard" class="status-box hidden">
             <div id="player-status">等待連線中...</div>
-            <div id="player-log">系統已準備就緒</div>
             <div id="playing-ui" class="playing-indicator hidden">🎶 正在播放樂曲...</div>
         </div>
-
-        <!-- 隱藏的音樂播放器 (3首歌) -->
         <audio id="audio-song1" src="song1.mp3"></audio>
         <audio id="audio-song2" src="song2.mp3"></audio>
         <audio id="audio-song3" src="song3.mp3"></audio>
     </div>
 
-    <!-- ==================== 3. 手機遙控器畫面 ==================== -->
+    <!-- 3. 手機遙控器畫面 -->
     <div id="remote-screen" class="hidden">
+        <!-- 遙控區 -->
         <div class="remote-container">
-            <h1 class="theme-title"> 文理書院(香港) <br>✨ 幻舞敦煌 智控霓裳 ✨</h1>
+            <h1 class="theme-title"> 文理書院(香港) <br> ✨ 幻舞敦煌智控霓裳 ✨</h1>
             <p class="theme-subtitle">點擊下方按鈕，聆聽展覽樂曲</p>
-
             <button class="play-btn" onclick="sendRemoteCommand('play1')">▶️ 播放：歌曲 1</button>
             <button class="play-btn" onclick="sendRemoteCommand('play2')">▶️ 播放：歌曲 2</button>
             <button class="play-btn" onclick="sendRemoteCommand('play3')">▶️ 播放：歌曲 3</button>
-            
             <button class="stop-btn" onclick="sendRemoteCommand('stop')">⏹️ 暫停播放</button>
-
             <div id="remote-status">正在連接展覽網絡...</div>
+        </div>
+
+        <!-- 展品簡介區 (向下拉可見) -->
+        <div class="intro-section">
+            <h2 class="intro-title">展品簡介</h2>
+            
+            <img src="pic_main.jpg" alt="幻舞敦煌智控霓裳" class="doc-img">
+            <img src="pic_apsaras.jpg" alt="飛天像" class="doc-img">
+
+            <div class="content-card">
+                <h3>創作主題</h3>
+                <p>以敦煌石窟壁畫中的「飛天」為核心,象徵中華藝術的想像力與絲路文化的融合。<span class="cite">[cite: 1]</span>我們希望透過作品傳達文化包容與融合的精神,並激勵青少年像飛天一樣,在未來的探索中不受傳統框架束縛,勇敢追求夢想與自由。<span class="cite">[cite: 1]</span></p>
+            </div>
+
+            <div class="content-card">
+                <h3>STEAM 元素應用</h3>
+                <ul>
+                    <li>科技與程式:利用microbit 製造不同的聲光效影。<span class="cite">[cite: 1]</span></li>
+                    <li>程式編碼:利用AI編寫程式執行播放預設音樂。<span class="cite">[cite: 1]</span></li>
+                    <li>科學(光學):應用光學反射與透鏡原理,投影圖像。<span class="cite">[cite: 1]</span></li>
+                    <li>工程結構:雷射切割技術精密製作聯動結構。<span class="cite">[cite: 1]</span></li>
+                    <li>數學:精確計算角度比例,確保結構對稱與平衡。<span class="cite">[cite: 1]</span></li>
+                </ul>
+            </div>
+
+            <div class="content-card">
+                <h3>互動智能感應設計</h3>
+                
+                <img src="pic_ir.jpg" alt="紅外線感應-項鍊" class="doc-img" style="margin-top: 10px;">
+                <p><b>紅外線感應-項鍊：</b>當觀眾進入展覽範圍時,感應器探測到人體體溫產生的紅外線變化,導致傳感器失去電荷平衡並釋放電荷,從而發出電訊號,亮起花燈。<span class="cite">[cite: 1]</span></p>
+
+                <p><b>NFC/QR CODE：</b>透過手機感應 NFC/QR code標籤自動執行預設指令,直接開啟連結播放特定歌曲或歌單。<span class="cite">[cite: 1]</span>實現觸碰即播的智慧音樂體驗,帶領進入浸沉式體驗,感受敦煌文化。<span class="cite">[cite: 1]</span></p>
+
+                <img src="pic_light.jpg" alt="光敏感應- 首飾盒" class="doc-img" style="margin-top: 10px;">
+                <p><b>光敏感應- 首飾盒：</b>用光電效應由發射器(投光)和接收器(受光)組成。<span class="cite">[cite: 1]</span>透過偵測光束是否被「遮斷」或「反射」來啟動裝置,開啟吹風系統,吹動搖鼓上的綢帶。<span class="cite">[cite: 1]</span></p>
+
+                <img src="pic_sound.jpg" alt="聲音感應-藏於裙擺" class="doc-img" style="margin-top: 10px;">
+                <p><b>聲音感應-藏於裙擺：</b>利用環境中的聲波動轉化為電訊號。<span class="cite">[cite: 1]</span>它就是機器的「耳朵」,最核心的組件是一個微型麥克風。<span class="cite">[cite: 1]</span>當觀眾拍手時,花燈上的裝飾燈串會按程式設定亮起。<span class="cite">[cite: 1]</span></p>
+            </div>
+            
+            <p style="text-align: center; color: #8b5a2b; font-size: 12px; margin-top: 30px;">文理書院 (香港) 參展作品<span class="cite">[cite: 1]</span></p>
         </div>
     </div>
 
-    <!-- ==================== 核心 JavaScript 邏輯 ==================== -->
+    <!-- 核心 JavaScript 邏輯 -->
     <script>
         const MQTT_TOPIC = "hk_exhibition/audio_control/dunhuang_8899";
         const MQTT_BROKER = "wss://broker.emqx.io:8084/mqtt";
@@ -210,116 +244,59 @@
 
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
-            if (mode === 'player') {
-                startMode('player');
-            } else if (mode === 'remote') {
-                startMode('remote');
-            }
+            if (urlParams.get('mode') === 'player') startMode('player');
+            else if (urlParams.get('mode') === 'remote') startMode('remote');
         };
 
         function startMode(mode) {
             document.getElementById('selection-screen').classList.add('hidden');
-            if (mode === 'player') {
-                document.getElementById('player-screen').classList.remove('hidden');
-            } else if (mode === 'remote') {
+            if (mode === 'player') document.getElementById('player-screen').classList.remove('hidden');
+            else if (mode === 'remote') {
                 document.getElementById('remote-screen').classList.remove('hidden');
                 initRemoteController();
             }
         }
 
-        /* --- 平板播放器邏輯 (Player) --- */
         function initAudioPlayer() {
-            // 獲取三首歌的元素
-            const audio1 = document.getElementById('audio-song1');
-            const audio2 = document.getElementById('audio-song2');
-            const audio3 = document.getElementById('audio-song3');
-            const allAudios = [audio1, audio2, audio3];
+            const audios = [document.getElementById('audio-song1'), document.getElementById('audio-song2'), document.getElementById('audio-song3')];
+            audios.forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(e=>console.log(e)); });
             
-            // 解鎖所有歌曲嘅自動播放限制
-            allAudios.forEach(audio => {
-                audio.play().then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                }).catch(e => console.error("解鎖音效失敗:", e));
-            });
-
             document.getElementById('player-start-btn').classList.add('hidden');
             document.getElementById('player-dashboard').classList.remove('hidden');
             document.getElementById('player-status').innerText = "系統已解鎖，連接雲端中...";
 
             mqttClient = mqtt.connect(MQTT_BROKER);
-
-            mqttClient.on('connect', function () {
+            mqttClient.on('connect', () => {
                 document.getElementById('player-status').innerText = "已連線！等待觀眾手機指令";
                 mqttClient.subscribe(MQTT_TOPIC);
             });
 
-            mqttClient.on('message', function (topic, message) {
+            mqttClient.on('message', (topic, message) => {
                 const cmd = message.toString();
-                document.getElementById('player-log').innerText = "收到最新指令: " + cmd + " (" + new Date().toLocaleTimeString() + ")";
-                
-                // 收到任何指令，首先將所有歌停晒，避免重疊
-                allAudios.forEach(audio => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                });
+                audios.forEach(a => { a.pause(); a.currentTime = 0; });
+                const ui = document.getElementById('playing-ui');
 
-                const playingUi = document.getElementById('playing-ui');
-
-                // 根據指令播放對應嘅歌
-                if (cmd === "play1") {
-                    audio1.play();
-                    playingUi.innerText = "🎶 正在播放：歌曲 1...";
-                    playingUi.classList.remove('hidden');
-                } else if (cmd === "play2") {
-                    audio2.play();
-                    playingUi.innerText = "🎶 正在播放：歌曲 2...";
-                    playingUi.classList.remove('hidden');
-                } else if (cmd === "play3") {
-                    audio3.play();
-                    playingUi.innerText = "🎶 正在播放：歌曲 3...";
-                    playingUi.classList.remove('hidden');
-                } else if (cmd === "stop") {
-                    playingUi.classList.add('hidden');
-                }
+                if (cmd.startsWith('play')) {
+                    audios[parseInt(cmd.replace('play','')) - 1].play();
+                    ui.innerText = `🎶 正在播放：歌曲 ${cmd.replace('play','')}...`;
+                    ui.classList.remove('hidden');
+                } else if (cmd === "stop") ui.classList.add('hidden');
             });
 
-            // 監聽所有歌曲播完事件
-            allAudios.forEach(audio => {
-                audio.onended = function() {
-                    document.getElementById('playing-ui').classList.add('hidden');
-                    document.getElementById('player-log').innerText = "歌曲播放完畢，等待下一次指令";
-                };
-            });
+            audios.forEach(a => a.onended = () => document.getElementById('playing-ui').classList.add('hidden'));
         }
 
-        /* --- 手機遙控器邏輯 (Remote) --- */
         function initRemoteController() {
             mqttClient = mqtt.connect(MQTT_BROKER);
-
-            mqttClient.on('connect', function () {
-                document.getElementById('remote-status').innerText = "系統已準備就緒，請點歌！";
-            });
-
-            mqttClient.on('error', function () {
-                document.getElementById('remote-status').innerText = "無法連接網絡，請重試。";
-            });
+            mqttClient.on('connect', () => document.getElementById('remote-status').innerText = "系統已準備就緒，請點歌！");
+            mqttClient.on('error', () => document.getElementById('remote-status').innerText = "無法連接網絡，請重試。");
         }
 
         function sendRemoteCommand(cmd) {
             if (mqttClient && mqttClient.connected) {
                 mqttClient.publish(MQTT_TOPIC, cmd);
-                
-                if(cmd.startsWith('play')) {
-                    document.getElementById('remote-status').innerText = "指令已發送！請聆聽現場音樂";
-                } else {
-                    document.getElementById('remote-status').innerText = "音樂已暫停";
-                }
-                
-                setTimeout(() => {
-                    document.getElementById('remote-status').innerText = "系統已準備就緒，請點歌！";
-                }, 3000);
+                document.getElementById('remote-status').innerText = cmd.startsWith('play') ? "指令已發送！請聆聽現場音樂" : "音樂已暫停";
+                setTimeout(() => document.getElementById('remote-status').innerText = "系統已準備就緒，請點歌！", 3000);
             } else {
                 document.getElementById('remote-status').innerText = "網絡連線異常，請重新整理網頁";
             }
