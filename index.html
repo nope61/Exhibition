@@ -50,6 +50,7 @@
             align-items: center;
             height: 100vh;
             background-color: #0b0705;
+            transition: background-color 0.5s;
         }
         #player-start-btn {
             background-color: #b04a3e;
@@ -73,6 +74,21 @@
         #player-status { font-size: 24px; color: #d4a373; margin-bottom: 10px; }
         .playing-indicator { color: #e6c280; font-size: 30px; font-weight: bold; margin-top: 20px; }
 
+        /* 🌙 慳電黑屏模式專用 CSS */
+        .power-save-btn {
+            margin-top: 30px;
+            background-color: #333;
+            color: #aaa;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .blackout-mode { background-color: #000 !important; color: #000 !important; }
+        .blackout-mode * { opacity: 0; pointer-events: none; }
+        .blackout-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; display: none; cursor: pointer; }
+
         /* --- 3. 手機遙控器畫面 (遙控 + 簡介) --- */
         #remote-screen {
             display: flex;
@@ -93,7 +109,7 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             margin-top: 10px;
         }
-        .theme-title { color: #d4a373; margin-bottom: 10px; font-size: 26px; letter-spacing: 3px; font-weight: normal; }
+        .theme-title { color: #d4a373; margin-bottom: 10px; font-size: 26px; letter-spacing: 3px; font-weight: normal; line-height: 1.4; }
         .theme-subtitle { color: #bcaaa4; margin-bottom: 20px; font-size: 15px; }
         
         .play-btn {
@@ -159,14 +175,12 @@
 </head>
 <body>
 
-    <!-- 1. 選擇模式畫面 -->
     <div id="selection-screen">
         <h1 style="color: #d4a373; margin-bottom: 40px; letter-spacing: 2px; font-weight: normal;">展覽系統設定</h1>
         <button class="mode-btn" onclick="startMode('player')">進入平板播放模式</button>
         <button class="mode-btn" onclick="startMode('remote')">進入手機遙控模式</button>
     </div>
 
-    <!-- 2. 平板播放器畫面 -->
     <div id="player-screen" class="hidden">
         <h1 style="color: #d4a373; font-weight: normal; letter-spacing: 3px;">音響控制主機</h1>
         <p style="color: #8b5a2b; margin-bottom: 40px;">請確保平板已連接藍牙喇叭，並點擊下方按鈕啟動</p>
@@ -174,15 +188,16 @@
         <div id="player-dashboard" class="status-box hidden">
             <div id="player-status">等待連線中...</div>
             <div id="playing-ui" class="playing-indicator hidden">🎶 正在播放樂曲...</div>
+            <button class="power-save-btn" onclick="enableBlackout()">🌙 進入黑屏慳電模式</button>
         </div>
         <audio id="audio-song1" src="song1.mp3"></audio>
         <audio id="audio-song2" src="song2.mp3"></audio>
         <audio id="audio-song3" src="song3.mp3"></audio>
     </div>
 
-    <!-- 3. 手機遙控器畫面 -->
+    <div id="wake-layer" class="blackout-overlay" ondblclick="disableBlackout()"></div>
+
     <div id="remote-screen" class="hidden">
-        <!-- 遙控區 -->
         <div class="remote-container">
             <h1 class="theme-title"> 文理書院(香港) <br> ✨ 幻舞敦煌智控霓裳 ✨</h1>
             <p class="theme-subtitle">點擊下方按鈕，聆聽展覽樂曲</p>
@@ -193,7 +208,6 @@
             <div id="remote-status">正在連接展覽網絡...</div>
         </div>
 
-        <!-- 展品簡介區 (向下拉可見) -->
         <div class="intro-section">
             <h2 class="intro-title">展品簡介</h2>
             
@@ -236,7 +250,6 @@
         </div>
     </div>
 
-    <!-- 核心 JavaScript 邏輯 -->
     <script>
         const MQTT_TOPIC = "hk_exhibition/audio_control/dunhuang_8899";
         const MQTT_BROKER = "wss://broker.emqx.io:8084/mqtt";
@@ -255,6 +268,16 @@
                 document.getElementById('remote-screen').classList.remove('hidden');
                 initRemoteController();
             }
+        }
+
+        // 🌙 黑屏慳電功能邏輯
+        function enableBlackout() {
+            document.getElementById('player-screen').classList.add('blackout-mode');
+            document.getElementById('wake-layer').style.display = 'block';
+        }
+        function disableBlackout() {
+            document.getElementById('player-screen').classList.remove('blackout-mode');
+            document.getElementById('wake-layer').style.display = 'none';
         }
 
         function initAudioPlayer() {
